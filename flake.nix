@@ -20,17 +20,23 @@
           src = pkgs.fetchFromGitHub {
             owner = "cmang";
             repo = "durdraw";
-            rev = "v${version}";
-            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            rev = version;
+            # This hash needs to be updated - run nix build first to get the correct hash
+            hash = "sha256-a+4DGWBD5XLaNAfTN/fmI/gALe76SCoWrnjyglNhVPY=";
           };
           
-          nativeBuildInputs = with pkgs; [
-            installShellCompletion
+          # Specify the build system
+          pyproject = true;
+          build-system = with python.pkgs; [
+            setuptools
           ];
           
           propagatedBuildInputs = with python.pkgs; [
+            # Core dependencies - durdraw mainly uses standard library
+            # Add any specific Python dependencies here if needed
           ];
           
+          # Optional runtime dependencies
           makeWrapperArgs = [
             "--prefix PATH : ${pkgs.lib.makeBinPath [ 
               pkgs.ansilove  # For PNG/GIF export
@@ -64,15 +70,17 @@
             fi
             
             # Install shell completion if available
-            if [ -f completion/durdraw.bash ]; then
-              installShellCompletion --bash completion/durdraw.bash
-            fi
+            # if [ -f completion/durdraw.bash ]; then
+            #   installShellCompletion --bash completion/durdraw.bash
+            # fi
           '';
           
+          # Tests - only run if test directory exists
           nativeCheckInputs = with python.pkgs; [
             pytestCheckHook
           ];
           
+          # Only run tests if test directory exists
           checkPhase = ''
             if [ -d test ]; then
               pytest -v test/
@@ -81,6 +89,7 @@
             fi
           '';
           
+          # Disable tests by default since they might not exist
           doCheck = false;
           
           meta = with pkgs.lib; {
@@ -110,6 +119,7 @@
             name = "durdraw";
           };
           
+          # Only create durfetch app if it exists
           durfetch = flake-utils.lib.mkApp {
             drv = durdraw;
             name = "durfetch";
@@ -123,6 +133,7 @@
             python.pkgs.pytest
             ansilove
             neofetch
+            # Development tools
             python.pkgs.black
             python.pkgs.flake8
             python.pkgs.setuptools
@@ -136,6 +147,7 @@
           '';
         };
         
+        # Optional: Home Manager module
         homeManagerModules.default = { config, lib, pkgs, ... }:
           with lib;
           let
