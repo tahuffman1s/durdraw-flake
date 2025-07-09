@@ -9,12 +9,12 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.${system};
+        format = "setuptools";
+        pyproject = true;
       in
       {
         packages = {
           default = self.packages.${system}.durdraw;
-          format = "setuptools";
-          pyproject = true;
           
           durdraw = pkgs.python3Packages.buildPythonApplication rec {
             pname = "durdraw";
