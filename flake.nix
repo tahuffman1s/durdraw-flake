@@ -17,6 +17,12 @@
           pname = "durdraw";
           version = "0.29.0";
           
+          # Add these required attributes
+          pyproject = true;
+          build-system = with python.pkgs; [
+            setuptools
+          ];
+          
           src = pkgs.fetchFromGitHub {
             owner = "cmang";
             repo = "durdraw";
