@@ -1,5 +1,7 @@
 {
   description = "Durdraw - ASCII, ANSI and Unicode art editor for UNIX terminals";
+  format = "setuptools";
+  pyproject = true;
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -9,8 +11,6 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.${system};
-        format = "setuptools";
-        pyproject = true;
       in
       {
         packages = {
