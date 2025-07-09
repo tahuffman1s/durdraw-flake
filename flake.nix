@@ -17,23 +17,22 @@
           pname = "durdraw";
           version = "0.29.0";
           
-          src = pkgs.fetchFromGitHub {
-            owner = "cmang";
-            repo = "durdraw";
-            rev = version;
-            # This hash needs to be updated - run nix build first to get the correct hash
-            hash = "sha256-a+4DGWBD5XLaNAfTN/fmI/gALe76SCoWrnjyglNhVPY=";
-          };
-          
-          # Specify the build system
+          # Add these required attributes
           pyproject = true;
           build-system = with python.pkgs; [
             setuptools
           ];
           
+          src = pkgs.fetchFromGitHub {
+            owner = "cmang";
+            repo = "durdraw";
+            rev = version;
+            # You'll need to update this hash after first attempt
+            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+          };
+          
           propagatedBuildInputs = with python.pkgs; [
-            # Core dependencies - durdraw mainly uses standard library
-            # Add any specific Python dependencies here if needed
+            # Core dependencies (ncurses is included with Python)
           ];
           
           # Optional runtime dependencies
@@ -45,52 +44,36 @@
           ];
           
           postInstall = ''
-            # Install configuration and themes if they exist
-            if [ -d themes ]; then
-              mkdir -p $out/share/durdraw
-              cp -r themes $out/share/durdraw/
-            fi
+            # Install configuration and themes
+            mkdir -p $out/share/durdraw
+            cp -r themes $out/share/durdraw/
+            cp durdraw.ini $out/share/durdraw/
             
-            if [ -f durdraw.ini ]; then
-              mkdir -p $out/share/durdraw
-              cp durdraw.ini $out/share/durdraw/
-            fi
+            # Install examples
+            cp -r examples $out/share/durdraw/
             
-            # Install examples if they exist
-            if [ -d examples ]; then
-              mkdir -p $out/share/durdraw
-              cp -r examples $out/share/durdraw/
-              
-              # Create wrapper scripts for convenience
-              cat > $out/bin/durdraw-examples <<EOF
+            # Create wrapper scripts for convenience
+            cat > $out/bin/durdraw-examples <<EOF
             #!/bin/sh
             exec $out/bin/durdraw -p $out/share/durdraw/examples/*.dur "\$@"
             EOF
-              chmod +x $out/bin/durdraw-examples
-            fi
+            chmod +x $out/bin/durdraw-examples
             
             # Install shell completion if available
-            # if [ -f completion/durdraw.bash ]; then
-            #   installShellCompletion --bash completion/durdraw.bash
-            # fi
+            if [ -f completion/durdraw.bash ]; then
+              installShellCompletion --bash completion/durdraw.bash
+            fi
           '';
           
-          # Tests - only run if test directory exists
-          nativeCheckInputs = with python.pkgs; [
+          # Tests
+          checkInputs = with python.pkgs; [
             pytestCheckHook
           ];
           
-          # Only run tests if test directory exists
-          checkPhase = ''
-            if [ -d test ]; then
-              pytest -v test/
-            else
-              echo "No test directory found, skipping tests"
-            fi
-          '';
-          
-          # Disable tests by default since they might not exist
-          doCheck = false;
+          # Run tests if they exist
+          pytestFlagsArray = [
+            "test/"
+          ];
           
           meta = with pkgs.lib; {
             description = "ASCII, Unicode and ANSI art editor for Unix-like systems";
@@ -98,7 +81,6 @@
             license = licenses.bsd3;
             maintainers = with maintainers; [ ];
             platforms = platforms.unix;
-            mainProgram = "durdraw";
           };
         };
         
@@ -111,18 +93,15 @@
         apps = {
           default = flake-utils.lib.mkApp {
             drv = durdraw;
-            name = "durdraw";
           };
           
           durdraw = flake-utils.lib.mkApp {
             drv = durdraw;
-            name = "durdraw";
           };
           
-          # Only create durfetch app if it exists
           durfetch = flake-utils.lib.mkApp {
             drv = durdraw;
-            name = "durfetch";
+            exePath = "/bin/durfetch";
           };
         };
         
@@ -136,14 +115,12 @@
             # Development tools
             python.pkgs.black
             python.pkgs.flake8
-            python.pkgs.setuptools
-            python.pkgs.wheel
           ];
           
           shellHook = ''
             echo "Durdraw development environment"
             echo "Run 'python -m durdraw' to test locally"
-            echo "Run 'pytest -vv test/' to run tests (if test directory exists)"
+            echo "Run 'pytest -vv test/' to run tests"
           '';
         };
         
