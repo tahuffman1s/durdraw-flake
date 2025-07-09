@@ -1,119 +1,90 @@
 {
-  description = "Durdraw - Versatile ASCII and ANSI Art text editor";
+  description = "Durdraw - ASCII, ANSI and Unicode art editor for UNIX terminals";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
-
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        pythonPackages = pkgs.python311Packages;
       in
       {
         packages = {
           default = self.packages.${system}.durdraw;
           
-          durdraw = pythonPackages.buildPythonApplication rec {
+          durdraw = pkgs.python3Packages.buildPythonApplication rec {
             pname = "durdraw";
             version = "0.29.0";
-            
-            src = ./.;
-            
-            pyproject = true;
-            
-            build-system = with pythonPackages; [
+
+            src = pkgs.fetchFromGitHub {
+              owner = "cmang";
+              repo = "durdraw";
+              rev = version;
+              # Update this hash after first build attempt
+              sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            };
+
+            # No Python dependencies required as of v0.27.0!
+            propagatedBuildInputs = [ ];
+
+            # Build dependencies
+            nativeBuildInputs = with pkgs.python3Packages; [
               setuptools
               wheel
             ];
-            
-            nativeBuildInputs = with pkgs; [
-              makeWrapper
-            ];
-            
-            postInstall = ''
-              # Install themes and examples
-              mkdir -p $out/share/durdraw
-              cp -r themes $out/share/durdraw/
-              cp -r examples $out/share/durdraw/
-              cp durdraw.ini $out/share/durdraw/
-              
-              # Wrap with optional dependencies
-              wrapProgram $out/bin/durdraw \
-                --prefix PATH : ${pkgs.lib.makeBinPath [
-                  pkgs.ansilove
-                  pkgs.neofetch
-                ]}
-              
-              # Create convenience script for examples
-              cat > $out/bin/durdraw-examples <<'EOF'
-              #!/usr/bin/env bash
-              exec durdraw -p $out/share/durdraw/examples/*.dur "$@"
-              EOF
-              chmod +x $out/bin/durdraw-examples
-              
-              # If durfetch exists as separate script, install it
-              if [ -f durfetch ]; then
-                install -Dm755 durfetch $out/bin/durfetch
-                wrapProgram $out/bin/durfetch \
-                  --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.neofetch ]}
-              fi
+
+            # Optional runtime dependencies
+            # Users can add these to their environment if needed
+            passthru.optional-dependencies = {
+              export = [ pkgs.ansilove ];
+              fetch = [ pkgs.neofetch ];
+            };
+
+            # Ensure ncurses is available
+            buildInputs = [ pkgs.ncurses ];
+
+            # Tests require pytest
+            checkInputs = with pkgs.python3Packages; [ pytest ];
+
+            # Run tests
+            checkPhase = ''
+              runHook preCheck
+              pytest -vv test/
+              runHook postCheck
             '';
-            
+
             meta = with pkgs.lib; {
-              description = "Versatile ASCII and ANSI Art text editor for drawing in the terminal";
-              homepage = "https://durdraw.org";
+              description = "ASCII, ANSI and Unicode art editor for UNIX terminals";
+              homepage = "https://github.com/cmang/durdraw";
               license = licenses.bsd3;
-              maintainers = [ ];
+              maintainers = with maintainers; [ /* your-name */ ];
               platforms = platforms.unix;
               mainProgram = "durdraw";
             };
           };
         };
-        
-        apps = {
-          default = self.apps.${system}.durdraw;
-          
-          durdraw = flake-utils.lib.mkApp {
-            drv = self.packages.${system}.durdraw;
-          };
-          
-          durfetch = flake-utils.lib.mkApp {
-            drv = self.packages.${system}.durdraw;
-            exePath = "/bin/durfetch";
-          };
-          
-          examples = flake-utils.lib.mkApp {
-            drv = self.packages.${system}.durdraw;
-            exePath = "/bin/durdraw-examples";
-          };
+
+        apps.default = flake-utils.lib.mkApp {
+          drv = self.packages.${system}.durdraw;
         };
-        
+
         devShells.default = pkgs.mkShell {
           inputsFrom = [ self.packages.${system}.durdraw ];
           
-          buildInputs = with pkgs; [
-            pythonPackages.python
-            pythonPackages.pip
-            pythonPackages.pytest
-            pythonPackages.black
-            pythonPackages.flake8
+          packages = with pkgs; [
+            python3
+            python3Packages.pytest
+            # Optional tools for full functionality
             ansilove
             neofetch
           ];
-          
+
           shellHook = ''
             echo "Durdraw development environment"
-            echo ""
-            echo "Commands:"
-            echo "  ./start-durdraw    - Run durdraw from source"
-            echo "  nix build          - Build the package"
-            echo "  nix run            - Run the built package"
-            echo "  nix run .#durfetch - Run durfetch"
-            echo "  nix run .#examples - Run example animations"
-            echo ""
+            echo "Run 'durdraw' to start the application"
+            echo "Optional: ansilove (PNG export), neofetch (system info)"
           '';
         };
       });
