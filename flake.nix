@@ -7,7 +7,7 @@
   };
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+    (flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
         
@@ -112,62 +112,63 @@
             echo "Run 'pytest -vv test/' to run tests"
           '';
         };
-        
-        # Optional: Home Manager module
-        homeManagerModules.default = { config, lib, pkgs, ... }:
-          with lib;
-          let
-            cfg = config.programs.durdraw;
-          in {
-            options.programs.durdraw = {
-              enable = mkEnableOption "durdraw ASCII art editor";
-              
-              package = mkOption {
-                type = types.package;
-                default = self.packages.${pkgs.system}.durdraw;
-                description = "The durdraw package to use";
-              };
-              
-              settings = mkOption {
-                type = types.attrs;
-                default = {};
-                example = literalExpression ''
-                  {
-                    Main = {
-                      color-mode = 256;
-                      cursor-mode = "underscore";
-                      scroll-colors = true;
-                    };
-                    Theme = {
-                      theme-16 = "~/.durdraw/themes/mutedchill-16.dtheme.ini";
-                      theme-256 = "~/.durdraw/themes/mutedform-256.dtheme.ini";
-                    };
-                  }
-                '';
-                description = "Configuration for durdraw";
-              };
-              
-              installThemes = mkOption {
-                type = types.bool;
-                default = true;
-                description = "Whether to install default themes";
-              };
+      }
+    )) // {
+      # Home Manager modules should be defined at the top level, outside of eachDefaultSystem
+      homeManagerModules.default = { config, lib, pkgs, ... }:
+        with lib;
+        let
+          cfg = config.programs.durdraw;
+        in {
+          options.programs.durdraw = {
+            enable = mkEnableOption "durdraw ASCII art editor";
+            
+            package = mkOption {
+              type = types.package;
+              default = self.packages.${pkgs.system}.durdraw;
+              description = "The durdraw package to use";
             };
             
-            config = mkIf cfg.enable {
-              home.packages = [ cfg.package ];
-              
-              xdg.configFile = mkIf (cfg.settings != {}) {
-                "durdraw/durdraw.ini".text = lib.generators.toINI {} cfg.settings;
-              };
-              
-              home.file = mkIf cfg.installThemes {
-                ".durdraw/themes" = {
-                  source = "${cfg.package}/share/durdraw/themes";
-                  recursive = true;
-                };
+            settings = mkOption {
+              type = types.attrs;
+              default = {};
+              example = literalExpression ''
+                {
+                  Main = {
+                    color-mode = 256;
+                    cursor-mode = "underscore";
+                    scroll-colors = true;
+                  };
+                  Theme = {
+                    theme-16 = "~/.durdraw/themes/mutedchill-16.dtheme.ini";
+                    theme-256 = "~/.durdraw/themes/mutedform-256.dtheme.ini";
+                  };
+                }
+              '';
+              description = "Configuration for durdraw";
+            };
+            
+            installThemes = mkOption {
+              type = types.bool;
+              default = true;
+              description = "Whether to install default themes";
+            };
+          };
+          
+          config = mkIf cfg.enable {
+            home.packages = [ cfg.package ];
+            
+            xdg.configFile = mkIf (cfg.settings != {}) {
+              "durdraw/durdraw.ini".text = lib.generators.toINI {} cfg.settings;
+            };
+            
+            home.file = mkIf cfg.installThemes {
+              ".durdraw/themes" = {
+                source = "${cfg.package}/share/durdraw/themes";
+                recursive = true;
               };
             };
           };
-      });
+        };
+    };
 }
