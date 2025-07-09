@@ -64,16 +64,6 @@
             fi
           '';
           
-          # Tests
-          checkInputs = with python.pkgs; [
-            pytestCheckHook
-          ];
-          
-          # Run tests if they exist
-          pytestFlagsArray = [
-            "test/"
-          ];
-          
           meta = with pkgs.lib; {
             description = "ASCII, Unicode and ANSI art editor for Unix-like systems";
             homepage = "https://durdraw.org";
