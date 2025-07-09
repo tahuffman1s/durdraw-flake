@@ -27,8 +27,7 @@
             owner = "cmang";
             repo = "durdraw";
             rev = version;
-            # You'll need to update this hash after first attempt
-            hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+            hash = "sha256-a+4DGWBD5XLaNAfTN/fmI/gALe76SCoWrnjyglNhVPY=";
           };
           
           propagatedBuildInputs = with python.pkgs; [
