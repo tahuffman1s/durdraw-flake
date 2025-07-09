@@ -25,6 +25,13 @@
             hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
           };
           
+          pyproject = true;
+          
+          build-system = with python.pkgs; [
+            setuptools
+            wheel
+          ];
+          
           propagatedBuildInputs = with python.pkgs; [
             # Core dependencies (ncurses is included with Python)
           ];
