@@ -13,6 +13,7 @@
       {
         packages = {
           default = self.packages.${system}.durdraw;
+          format = "setuptools";
           pyproject = true;
           
           durdraw = pkgs.python3Packages.buildPythonApplication rec {
