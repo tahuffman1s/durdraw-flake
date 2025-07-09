@@ -8,7 +8,7 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
+        pkgs = nixpkgs.${system};
       in
       {
         packages = {
@@ -22,33 +22,25 @@
               owner = "cmang";
               repo = "durdraw";
               rev = version;
-              # Update this hash after first build attempt
               sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
             };
 
-            # No Python dependencies required as of v0.27.0!
             propagatedBuildInputs = [ ];
 
-            # Build dependencies
             nativeBuildInputs = with pkgs.python3Packages; [
               setuptools
               wheel
             ];
 
-            # Optional runtime dependencies
-            # Users can add these to their environment if needed
             passthru.optional-dependencies = {
               export = [ pkgs.ansilove ];
               fetch = [ pkgs.neofetch ];
             };
 
-            # Ensure ncurses is available
             buildInputs = [ pkgs.ncurses ];
 
-            # Tests require pytest
             checkInputs = with pkgs.python3Packages; [ pytest ];
 
-            # Run tests
             checkPhase = ''
               runHook preCheck
               pytest -vv test/
@@ -59,7 +51,7 @@
               description = "ASCII, ANSI and Unicode art editor for UNIX terminals";
               homepage = "https://github.com/cmang/durdraw";
               license = licenses.bsd3;
-              maintainers = with maintainers; [ /* your-name */ ];
+              maintainers = with maintainers; [ Travis Huffman ];
               platforms = platforms.unix;
               mainProgram = "durdraw";
             };
